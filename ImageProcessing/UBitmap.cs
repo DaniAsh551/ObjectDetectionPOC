@@ -1,4 +1,7 @@
-﻿using System;
+///DISCLAIMER
+///This class is taken from SaxxonPike's answer here: 'https://stackoverflow.com/a/34801225', I simply renamed it to UBitmap
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
