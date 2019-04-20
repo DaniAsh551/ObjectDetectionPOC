@@ -1,88 +1,54 @@
-﻿/// Copyright 2019 Dani / Shum (d4n1.551 / Dani551)
-/// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
-/// to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-/// and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-/// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-/// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-/// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-/// IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-using System.Drawing;
+﻿using System.Drawing;
 
 namespace ImageProcessing
 {
     /// <summary>
-    /// Represents an object detection
+    /// Represents an object detected in the image.
     /// </summary>
     public class Detection
     {
         /// <summary>
-        /// The starting point of object (upper left corner)
+        /// The Starting point of the object relative to the image.
         /// </summary>
         public Point Start => new Point(LX, LY);
         /// <summary>
-        /// The ending point of object (lower right corner)
+        /// The Ending point of the object relative to the image.
         /// </summary>
         public Point End => new Point(HX, HY);
         /// <summary>
-        /// Represents the size of the object
+        /// The size of the object on the image in pixels.
         /// </summary>
         public Size Size => new Size(HX - LX, HY - LY);
         /// <summary>
-        /// Represents the space occupied by the object in the original image
+        /// A rectangle representing the bounds of the object.
         /// </summary>
         public Rectangle Rectangle => new Rectangle(Start, Size);
-
         /// <summary>
-        /// The id of detection, this is just and indexed number
+        /// A unique number to identify each object, this is the index number of detections.
         /// </summary>
         public int Id { get; set; }
         /// <summary>
-        /// Lowest X-Coordinate occupied by the object
+        /// Lowest X Value occupied by the object on the image.
         /// </summary>
         public int LX { get; set; }
         /// <summary>
-        /// Highest X-Coordinate occupied by the object
-        /// </summary>
-        public int HX { get; set; }
-        /// <summary>
-        /// Lowest Y-Coordinate occupied by the object
+        /// Lowest Y Value occupied by the object on the image.
         /// </summary>
         public int LY { get; set; }
         /// <summary>
-        /// Highest Y-Coordinate occupied by the object
+        /// Hightst X Value occupied by the object on the image.
+        /// </summary>
+        public int HX { get; set; }
+        /// <summary>
+        /// Highest Y Value occupied by the object on the image.
         /// </summary>
         public int HY { get; set; }
 
         /// <summary>
-        /// Draw a rectangle around the object on the given bitmap with the given color
+        /// Draws the bounding box of an object on the image.
         /// </summary>
-        /// <param name="bmp"></param>
-        /// <param name="color"></param>
-        public void Draw(Bitmap bmp, Color color)
-        {
-            using (var pen = new Pen(color))
-            using (var g = Graphics.FromImage(bmp))
-                g.DrawRectangle(pen, Rectangle);
-        }
-
-        /// <summary>
-        /// Draw a rectangle around the object on the given graphics with the given color
-        /// </summary>
-        /// <param name="bmp"></param>
-        /// <param name="color"></param>
-        public void Draw(Graphics graphics, Color color)
-        {
-            using (var pen = new Pen(color))
-                graphics.DrawRectangle(pen, Rectangle);
-        }
-
-        /// <summary>
-        /// Draw a rectangle around the object on the given graphics with the given pen
-        /// </summary>
-        /// <param name="bmp"></param>
-        /// <param name="color"></param>
+        /// <param name="graphics"></param>
+        /// <param name="pen"></param>
         public void Draw(Graphics graphics, Pen pen)
         {
             graphics.DrawRectangle(pen, Rectangle);

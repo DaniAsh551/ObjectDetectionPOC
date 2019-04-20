@@ -26,8 +26,18 @@ namespace ImageProcessing
         /// </summary>
         /// <param name="image"></param>
         /// <returns></returns>
-        public static Detection[] DetectObjects(this Image image)
+        public static Detection[] DetectObjects(this Image image, float accuracy = 20.0f)
         {
+            //Lower the size of the image so that it takes less resources and less time
+            //The factor by which to downscale the size, determined by the accuracy given
+            var resizeScale = image.Width / ((image.Width / 100) * accuracy);
+            resizeScale = (image.Width / resizeScale) % 2 == 0 ? resizeScale : (int)(resizeScale + 1);
+            
+            //The width we want on the resized image
+            var targetWidth = image.Width / resizeScale;
+            //resize the image
+            image = image.Resize((int)targetWidth);
+
             //Detect edges first so that it becomes easier to distinguish one object from another
             var ubmp = UBitmap.FromImage(image.DetectEdges());
             //We'll use this list to keep our 'Points' of interest (no pun intended ;-) )
@@ -111,6 +121,10 @@ namespace ImageProcessing
             }
 
             //Make Detection objects out of our clumps (convert them into something meaninful and interpretable)
+            //In here we multiply every X and Y values with resizeScale because the current points are relative to our resized image,
+            //But we need to know where these points were on the original full-size image
+            //We do Math.Ceiling because we cannot expect the value which comes after multiplying by resizeScale is gonna be a whole number,
+            //in which case we may lose a few pixels
             var objects = clumps.Select((clump, i) => 
             {
                 //Create a new Detection Object
@@ -119,13 +133,13 @@ namespace ImageProcessing
                     //Use index as Id
                     Id = i,
                     //find lowest X coordinate in the clump
-                    LX = clump.Min(x => x.X),
+                    LX = (int)Math.Ceiling(clump.Min(x => x.X) * resizeScale),
                     //find lowest y coordinate in the clump
-                    LY = clump.Min(y => y.Y),
+                    LY = (int)Math.Ceiling(clump.Min(y => y.Y) * resizeScale),
                     //find highest X coordinate in the clump
-                    HX = clump.Max(x => x.X),
+                    HX = (int)Math.Ceiling(clump.Max(x => x.X) * resizeScale),
                     //find highest X coordinate in the clump
-                    HY = clump.Max(y => y.Y)
+                    HY = (int)Math.Ceiling(clump.Max(y => y.Y) * resizeScale)
                 };
 
                 return d;
@@ -223,28 +237,13 @@ namespace ImageProcessing
 
         public static Image Resize(this Image image, int targetWidth, int targetHeight = 0)
         {
-            float scale = targetHeight > 0 ? Math.Min(targetWidth / image.Width, targetHeight / image.Height) : targetWidth/image.Width;
+            float scale = (float)targetWidth/(float)image.Width;
 
             if (targetHeight == 0)
                 targetHeight = (int)(image.Height * scale);
 
-            var bmp = new Bitmap(targetWidth, targetHeight);
-            var graph = Graphics.FromImage(bmp);
 
-            // uncomment for higher quality output
-            //graph.InterpolationMode = InterpolationMode.High;
-            //graph.CompositingQuality = CompositingQuality.HighQuality;
-            //graph.SmoothingMode = SmoothingMode.AntiAlias;
-
-            var scaleWidth = (int)(image.Width * scale);
-            var scaleHeight = (int)(image.Height * scale);
-
-            using (var brush = new SolidBrush(Color.Black))
-            {
-                graph.FillRectangle(brush, new RectangleF(0, 0, targetWidth, targetHeight));
-                graph.DrawImage(image, (image.Width - scaleWidth) / 2, (image.Height - scaleHeight) / 2, scaleWidth, scaleHeight);
-                return bmp;
-            }
+            return new Bitmap(image, new Size(targetWidth, targetHeight));
         }
 
         public static Image MakeGrayscale3(this Image original)

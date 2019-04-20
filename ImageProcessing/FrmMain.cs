@@ -14,6 +14,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace ImageProcessing
@@ -40,39 +41,70 @@ namespace ImageProcessing
         }
 
         private void txtFile_TextChanged(object sender, EventArgs e)
-        {   
+        {
             var text = txtFile.Text;
             if (string.IsNullOrWhiteSpace(text) || !File.Exists(text))
+            {
                 return;
+            }
+
             lblDetails.Text = "Loading Image...";
-            var image = new Bitmap(Image.FromFile(text));
 
-            var stopWatch = new Stopwatch();
+            var original = new Bitmap(Image.FromFile(text));
+            var imageObjDetection = new Bitmap(Image.FromFile(text));
+            var imageEdgeDetection = new Bitmap(Image.FromFile(text));
             var perfomanceCounter = new long[2];
+            var noOfDetections = 0;
 
-            pbOriginal.Image = image;
+            var edgeDetectionThread = new Thread(() =>
+            {
+                var stopWatch = new Stopwatch();
 
-            lblDetails.Text = "Detecting Edges...";
-            stopWatch.Start();
-            var edges = image.DetectEdges();
-            stopWatch.Stop();
-            perfomanceCounter[0] = stopWatch.ElapsedMilliseconds;
-            pbEdges.Image = edges;
+                pbOriginal.Image = original;
 
-            lblDetails.Text = "Detecting objects...";
-            stopWatch.Restart();
-            var detections = image.DetectObjects();
-            stopWatch.Stop();
-            perfomanceCounter[1] = stopWatch.ElapsedMilliseconds;
+                lblDetails.Text = "Detecting Edges...";
+                stopWatch.Start();
 
-            lblDetails.Text = $"{detections.Length} detections in {perfomanceCounter[1]}ms  |   Edge Detection Time: {perfomanceCounter[0]}ms   | Total: {perfomanceCounter.Sum()}ms";
+                var edges = imageEdgeDetection.DetectEdges();
+                stopWatch.Stop();
+                perfomanceCounter[0] = stopWatch.ElapsedMilliseconds;
+                pbEdges.Image = edges;
+                lblDetails.Text = "Edge Detection Complete...";
+            });
 
-            using (var graphics = Graphics.FromImage(image))
-            using (var pen = new Pen(Color.Aqua))
-                foreach (var detection in detections)
-                    detection.Draw(graphics, pen);
+            var objectDetectionThread = new Thread(() =>
+            {
+                var stopWatch = new Stopwatch();
+                lblDetails.Text = "Detecting objects...";
+                stopWatch.Restart();
+                var detections = imageObjDetection.DetectObjects();
+                stopWatch.Stop();
+                perfomanceCounter[1] = stopWatch.ElapsedMilliseconds;
+                noOfDetections = detections.Length;
 
-                pbDetection.Image = image;
+                using (var graphics = Graphics.FromImage(imageObjDetection))
+                using (var pen = new Pen(Color.Aqua))
+                {
+                    foreach (var detection in detections)
+                    {
+                        detection.Draw(graphics, pen);
+                    }
+                }
+
+                pbDetection.Image = imageObjDetection;
+            });
+
+            var finalStatusSetThread = new Thread(() => 
+            {
+                while (objectDetectionThread.IsAlive || edgeDetectionThread.IsAlive)
+                    Thread.Sleep(10);
+                
+                lblDetails.Text = $"{noOfDetections} detections in {perfomanceCounter[1]}ms  |   Edge Detection Time: {perfomanceCounter[0]}ms   | Total: {perfomanceCounter.Sum()}ms";
+            });
+
+            edgeDetectionThread.Start();
+            objectDetectionThread.Start();
+            finalStatusSetThread.Start();
         }
     }
 }
